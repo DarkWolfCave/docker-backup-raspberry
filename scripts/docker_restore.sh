@@ -32,6 +32,8 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../config/config"
 
+mkdir -p "$BACKUP_BASE_DIR"
+
 # Prüfe ob Backup-Verzeichnis als Parameter übergeben wurde
 if [ -z "$1" ]; then
     echo "Bitte Backup-Verzeichnis angeben"

@@ -35,6 +35,7 @@ source "$SCRIPT_DIR/../config/config"
 # Initialisiere Backup
 BACKUP_DATE=$(date +%Y-%m-%d_%H-%M-%S)
 BACKUP_DIR="$BACKUP_BASE_DIR/$BACKUP_DATE"
+mkdir -p "$BACKUP_BASE_DIR" "$BACKUP_DIR"
 
 # Funktion für Logging
 log() {
