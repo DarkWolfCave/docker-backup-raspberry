@@ -35,7 +35,6 @@ source "$SCRIPT_DIR/../config/config.sh"
 # Initialisiere Backup
 BACKUP_DATE=$(date +%Y-%m-%d_%H-%M-%S)
 BACKUP_DIR="$BACKUP_BASE_DIR/$BACKUP_DATE"
-LOG_FILE="$BACKUP_BASE_DIR/backup.log"
 
 # Funktion für Logging
 log() {
@@ -55,10 +54,6 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-DOCKER_DIR="/etc/docker"
-DOCKER_VOLUMES_DIR="/var/lib/docker/volumes"
-HOME_DIR="/home"
-
 # Backup-Verzeichnis erstellen und Logging starten
 mkdir -p $BACKUP_DIR
 log "Starte Backup-Prozess in $BACKUP_DIR"
@@ -77,6 +72,15 @@ log "Crontab-Sicherung abgeschlossen"
 
 # HOME-Verzeichnis sichern
 log "Starte Sicherung des HOME-Verzeichnisses..."
+if [ "$BACKUP_HOME" = true ]; then
+    if tar -czf "$BACKUP_DIR/home.tar.gz" --exclude="${BACKUP_DIR}" -C $HOME_DIR . 2>> "$LOG_FILE"; then
+        log "HOME-Verzeichnis erfolgreich gesichert"
+    else
+        log_error "Sicherung des HOME-Verzeichnisses fehlgeschlagen"
+    fi
+else
+    log "Sicherung des HOME-Verzeichnisses ist deaktiviert"
+fi
 
 #if tar -czf "$BACKUP_DIR/home.tar.gz" --exclude="${BACKUP_DIR}" -C $HOME_DIR . 2>> "$LOG_FILE"; then
 #if tar -czf "$BACKUP_DIR/home.tar.gz" -C $HOME_DIR . 2>> "$LOG_FILE"; then

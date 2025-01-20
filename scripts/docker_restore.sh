@@ -30,7 +30,7 @@
 
 # Lade Konfiguration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../config/config.sh"
+source "$SCRIPT_DIR/../config/config"
 
 # Prüfe ob Backup-Verzeichnis als Parameter übergeben wurde
 if [ -z "$1" ]; then
@@ -41,18 +41,17 @@ fi
 
 RESTORE_DATE=$(date +%Y-%m-%d_%H-%M-%S)
 BACKUP_DIR="$1"
-LOG_FILE="$BACKUP_DIR/restore_$RESTORE_DATE.log"
 
 # Funktion für Logging
 log() {
     local message="[$(date '+%Y-%m-%d %H:%M:%S')] $1"
-    echo "$message" | tee -a "$LOG_FILE"
+    echo "$message" | tee -a "$RESTORE_LOG_FILE"
 }
 
 # Funktion für Fehler-Logging
 log_error() {
     local message="[$(date '+%Y-%m-%d %H:%M:%S')] FEHLER: $1"
-    echo "$message" | tee -a "$LOG_FILE" >&2
+    echo "$message" | tee -a "$RESTORE_LOG_FILE" >&2
 }
 
 # Prüfe Root-Rechte
@@ -82,13 +81,13 @@ if [ -d "$BACKUP_DIR/crontabs" ]; then
             current_crontab=$(crontab -u $username -l 2>/dev/null)
 
             if [ -n "$current_crontab" ]; then
-                if (echo "$current_crontab"; cat "$crontab_file") | crontab -u $username - 2>> "$LOG_FILE"; then
+                if (echo "$current_crontab"; cat "$crontab_file") | crontab -u $username - 2>> "$RESTORE_LOG_FILE"; then
                     log "Crontab für Benutzer $username erfolgreich hinzugefügt"
                 else
                     log_error "Fehler beim Hinzufügen der Crontab für Benutzer $username"
                 fi
             else
-                if crontab -u $username "$crontab_file" 2>> "$LOG_FILE"; then
+                if crontab -u $username "$crontab_file" 2>> "$RESTORE_LOG_FILE"; then
                     log "Crontab für Benutzer $username erfolgreich wiederhergestellt"
                 else
                     log_error "Fehler beim Wiederherstellen der Crontab für Benutzer $username"
@@ -101,7 +100,7 @@ fi
 # HOME-Verzeichnis wiederherstellen
 log "Stelle HOME-Verzeichnis wieder her..."
 if [ -f "$BACKUP_DIR/home.tar.gz" ]; then
-    if tar -xzf "$BACKUP_DIR/home.tar.gz" -C $HOME_DIR 2>> "$LOG_FILE"; then
+    if tar -xzf "$BACKUP_DIR/home.tar.gz" -C $HOME_DIR 2>> "$RESTORE_LOG_FILE"; then
         log "HOME-Verzeichnis erfolgreich wiederhergestellt"
     else
         log_error "Fehler beim Wiederherstellen des HOME-Verzeichnisses"
@@ -116,8 +115,8 @@ for volume_tar in $BACKUP_DIR/*.tar.gz; do
     if [ -f "$volume_tar" ] && [ "$(basename $volume_tar)" != "home.tar.gz" ]; then
         volume_name=$(basename $volume_tar .tar.gz)
         log "Stelle Volume wieder her: $volume_name"
-        if docker volume create $volume_name 2>> "$LOG_FILE" && \
-           docker run --rm -v $volume_name:/volume -v $BACKUP_DIR:/backup ubuntu tar -xzf /backup/$(basename $volume_tar) -C /volume 2>> "$LOG_FILE"; then
+        if docker volume create $volume_name 2>> "$RESTORE_LOG_FILE" && \
+           docker run --rm -v $volume_name:/volume -v $BACKUP_DIR:/backup ubuntu tar -xzf /backup/$(basename $volume_tar) -C /volume 2>> "$RESTORE_LOG_FILE"; then
             log "Volume $volume_name erfolgreich wiederhergestellt"
         else
             log_error "Fehler beim Wiederherstellen des Volumes $volume_name"
@@ -129,7 +128,7 @@ log "Docker Volumes wiederhergestellt"
 # Docker Konfigurationen wiederherstellen
 if [ -d "$BACKUP_DIR/docker_configs" ]; then
     log "Stelle Docker Konfigurationen wieder her..."
-    if cp -r $BACKUP_DIR/docker_configs/* /etc/docker/ 2>> "$LOG_FILE"; then
+    if cp -r $BACKUP_DIR/docker_configs/* /etc/docker/ 2>> "$RESTORE_LOG_FILE"; then
         log "Docker Konfigurationen erfolgreich wiederhergestellt"
     else
         log_error "Fehler beim Wiederherstellen der Docker Konfigurationen"
@@ -141,7 +140,7 @@ log "Stelle Docker Images wieder her..."
 for image_tar in $BACKUP_DIR/*_backup.tar; do
     if [ -f "$image_tar" ]; then
         log "Stelle Image wieder her: $(basename $image_tar)"
-        if docker load < $image_tar 2>> "$LOG_FILE"; then
+        if docker load < $image_tar 2>> "$RESTORE_LOG_FILE"; then
             log "Image $(basename $image_tar) erfolgreich wiederhergestellt"
         else
             log_error "Fehler beim Wiederherstellen des Images $(basename $image_tar)"
@@ -153,7 +152,7 @@ log "Docker Images wiederhergestellt"
 # Container wiederherstellen
 if [ -f "$BACKUP_DIR/docker-compose.yml" ]; then
     log "Stelle Container über docker-compose wieder her..."
-    if docker-compose -f $BACKUP_DIR/docker-compose.yml up -d 2>> "$LOG_FILE"; then
+    if docker-compose -f $BACKUP_DIR/docker-compose.yml up -d 2>> "$RESTORE_LOG_FILE"; then
         log "Container erfolgreich über docker-compose wiederhergestellt"
     else
         log_error "Fehler beim Wiederherstellen der Container über docker-compose"
@@ -163,9 +162,9 @@ else
     if [ -f "$BACKUP_DIR/container_configs.json" ]; then
         while IFS=, read -r container_name container_state; do
             log "Stelle Container wieder her: $container_name"
-            if docker create --name "$container_name" "${container_name}_backup" 2>> "$LOG_FILE"; then
+            if docker create --name "$container_name" "${container_name}_backup" 2>> "$RESTORE_LOG_FILE"; then
                 if [[ $container_state == *"running"* ]]; then
-                    if docker start "$container_name" 2>> "$LOG_FILE"; then
+                    if docker start "$container_name" 2>> "$RESTORE_LOG_FILE"; then
                         log "Container $container_name erfolgreich gestartet"
                     else
                         log_error "Fehler beim Starten des Containers $container_name"
@@ -185,7 +184,7 @@ log "Korrigiere Berechtigungen für HOME-Verzeichnis..."
 for user_dir in $HOME_DIR/*; do
     if [ -d "$user_dir" ]; then
         username=$(basename "$user_dir")
-        if chown -R $username:$username "$user_dir" 2>> "$LOG_FILE"; then
+        if chown -R $username:$username "$user_dir" 2>> "$RESTORE_LOG_FILE"; then
             log "Berechtigungen für Benutzer $username korrigiert"
         else
             log_error "Fehler beim Korrigieren der Berechtigungen für Benutzer $username"
@@ -202,9 +201,9 @@ log "Startzeit: $RESTORE_DATE"
 log "Endzeit: $RESTORE_END_TIME"
 
 # Prüfe ob es Fehler gab
-ERROR_COUNT=$(grep -c "FEHLER:" "$LOG_FILE")
+ERROR_COUNT=$(grep -c "FEHLER:" "$RESTORE_LOG_FILE")
 if [ $ERROR_COUNT -gt 0 ]; then
-    log "WARNUNG: Es sind $ERROR_COUNT Fehler aufgetreten. Bitte überprüfen Sie das Log-File für Details: $LOG_FILE"
+    log "WARNUNG: Es sind $ERROR_COUNT Fehler aufgetreten. Bitte überprüfen Sie das Log-File für Details: $RESTORE_LOG_FILE"
 else
     log "Die Wiederherstellung wurde ohne Fehler abgeschlossen"
 fi

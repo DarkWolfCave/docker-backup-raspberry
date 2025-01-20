@@ -1,9 +1,11 @@
 #!/bin/bash
 # config/config.sh
 # Hauptverzeichnis für alle Backups
-BACKUP_DIR="/home/NAME/backup"
+BACKUP_BASE_DIR="/home/NAME/backup"
 # Pfad zur Log-Datei
-LOG_FILE="$BACKUP_DIR/backup.log"
+LOG_FILE="$BACKUP_BASE_DIR/backup.log"
+RESTORE_LOG_FILE="$BACKUP_BASE_DIR/restore.log"
+
 # Docker-spezifische Pfade
 DOCKER_DIR="/etc/docker"
 DOCKER_VOLUMES_DIR="/var/lib/docker/volumes"
@@ -12,6 +14,6 @@ HOME_DIR="/home"
 BACKUP_HOME=false
 # Optional: Ausschlüsse vom Backup
 EXCLUDE_DIRS=(
-    "$BACKUP_DIR"
+    "$BACKUP_BASE_DIR"
     "/home/NAME/Folder"
 )

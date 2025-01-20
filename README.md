@@ -23,7 +23,7 @@ Ein Set von Skripten zum vollständigen Backup und Restore von Docker-Umgebungen
 ```bash
 git clone https://github.com/DarkWolfCave/docker-backup-raspberry.git
 cd docker-backup-raspberry
-cp config/config.example.sh config/config.sh
+cp config/config.example config/config
 # Konfiguration in config.sh anpassen
 chmod +x scripts/*.sh
 ```
@@ -58,15 +58,21 @@ sudo ./scripts/docker_restore.sh /path/to/backup/YYYY-MM-DD_HH-MM-SS
 
 ## Konfiguration
 
-Kopieren Sie `config.example.sh` nach `config.sh` und passen Sie die Werte an:
-- BACKUP_DIR: Verzeichnis für die Backups
-- LOG_FILE: Pfad zur Log-Datei
+Kopiere `config.example` nach `config.sh` und passe die Werte an:
+- BACKUP_BASE_DIR: Verzeichnis für die Backups
+- LOG_FILE: Pfad zur Backup-Log-Datei
+- RESTORE_LOG_FILE: Pfad zur Restore-Log-Datei
+- DOCKER_DIR: Pfad zu Docker (in der Regel keine Änderung notwendig)
+- DOCKER_VOLUMES_DIR Pfad zu Docker-Volumes (in der Regel keine Änderung notwendig)
+- HOME_DIR: Pfad zu den HOME-Verzeichnissen ((in der Regel keine Änderung notwendig))
+- BACKUP_HOME:  false=HOME wird NICHT gesichert / true=HOME wird gesichert
+- EXCLUDE_DIRS: Verzeichnisse die ausgeschlossen werden beim Backup (immer das BACKUP-Verzeichnis selbst ausschließen!)
 
 ## Logging
 
 Die Skripte erstellen detaillierte Logs:
 - Backup-Log: `backup.log` im Backup-Verzeichnis
-- Restore-Log: `restore_DATUM.log` im Backup-Verzeichnis
+- Restore-Log: `restore.log` im Backup-Verzeichnis
 
 ## Fehlerbehandlung
 
