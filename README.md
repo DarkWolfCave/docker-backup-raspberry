@@ -58,7 +58,7 @@ sudo ./scripts/docker_restore.sh /path/to/backup/YYYY-MM-DD_HH-MM-SS
 
 ## Konfiguration
 
-Kopiere `config.example` nach `config.sh` und passe die Werte an:
+Kopiere `config.example` nach `config` und passe die Werte an:
 - BACKUP_BASE_DIR: Verzeichnis für die Backups
 - LOG_FILE: Pfad zur Backup-Log-Datei
 - RESTORE_LOG_FILE: Pfad zur Restore-Log-Datei
@@ -107,11 +107,16 @@ DarkWolfCave
 
 ## Support
 
-Bei Fragen oder Problemen können Sie:
+Bei Fragen oder Problemen kannst du:
 - Ein Issue auf GitHub erstellen
 - Die Dokumentation auf der Website konsultieren
+- Mich über [Discord](https://discord.gg/neyGWMUdjQ) erreichen 
 
 ## Changelog
+
+### Version 1.0.1 (Januar 2025)
+- Fehler in der config korrigiert
+- Readme angepasst
 
 ### Version 1.0 (Januar 2025)
 - Initiale Version
