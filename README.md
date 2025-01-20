@@ -25,6 +25,7 @@ git clone https://github.com/DarkWolfCave/docker-backup-raspberry.git
 cd docker-backup-raspberry
 cp config/config.example config/config
 # Konfiguration in config.sh anpassen
+nano config/config
 chmod +x scripts/*.sh
 ```
 

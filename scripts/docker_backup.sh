@@ -30,7 +30,7 @@
 
 # Lade Konfiguration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../config/config.sh"
+source "$SCRIPT_DIR/../config/config"
 
 # Initialisiere Backup
 BACKUP_DATE=$(date +%Y-%m-%d_%H-%M-%S)
