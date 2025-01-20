@@ -2,7 +2,7 @@
 # scripts/docker_backup.sh
 #
 # Erstellt von: DarkWolfCave
-# Version: 1.0
+# Version: 1.0.1
 # Erstellt am: Januar 2025
 # Letzte Änderung: 20.01.2025
 #
@@ -74,7 +74,7 @@ log "Crontab-Sicherung abgeschlossen"
 # HOME-Verzeichnis sichern
 log "Starte Sicherung des HOME-Verzeichnisses..."
 if [ "$BACKUP_HOME" = true ]; then
-    if tar -czf "$BACKUP_DIR/home.tar.gz" --exclude="${BACKUP_DIR}" -C $HOME_DIR . 2>> "$LOG_FILE"; then
+    if tar --warning=no-file-ignored -czf "$BACKUP_DIR/home.tar.gz" $(printf -- '--exclude=%s ' "${EXCLUDE_DIRS[@]}") -C "$HOME_DIR" .; then
         log "HOME-Verzeichnis erfolgreich gesichert"
     else
         log_error "Sicherung des HOME-Verzeichnisses fehlgeschlagen"
@@ -82,13 +82,6 @@ if [ "$BACKUP_HOME" = true ]; then
 else
     log "Sicherung des HOME-Verzeichnisses ist deaktiviert"
 fi
-
-#if tar -czf "$BACKUP_DIR/home.tar.gz" --exclude="${BACKUP_DIR}" -C $HOME_DIR . 2>> "$LOG_FILE"; then
-#if tar -czf "$BACKUP_DIR/home.tar.gz" -C $HOME_DIR . 2>> "$LOG_FILE"; then
-#    log "HOME-Verzeichnis erfolgreich gesichert"
-#else
-#    log_error "Sicherung des HOME-Verzeichnisses fehlgeschlagen"
-#fi
 
 # Docker Volumes sichern
 log "Starte Sicherung der Docker Volumes..."

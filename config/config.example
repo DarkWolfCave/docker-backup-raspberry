@@ -2,6 +2,11 @@
 # config/config.sh
 # Hauptverzeichnis für alle Backups
 BACKUP_BASE_DIR="/home/NAME/backup"
+
+###########NICHT ÄNDERN!######################
+RELATIVE_BACKUP_PATH=${BACKUP_BASE_DIR#/home/}
+##############################################
+
 # Pfad zur Log-Datei
 LOG_FILE="$BACKUP_BASE_DIR/backup.log"
 RESTORE_LOG_FILE="$BACKUP_BASE_DIR/restore.log"
@@ -10,10 +15,13 @@ RESTORE_LOG_FILE="$BACKUP_BASE_DIR/restore.log"
 DOCKER_DIR="/etc/docker"
 DOCKER_VOLUMES_DIR="/var/lib/docker/volumes"
 HOME_DIR="/home"
+
 # Optional: HOME-Verzeichnis Backup aktivieren/deaktivieren
 BACKUP_HOME=false
+
 # Optional: Ausschlüsse vom Backup
+# "$RELATIVE_BACKUP_PATH" NICHT ändern!
 EXCLUDE_DIRS=(
-    "$BACKUP_BASE_DIR"
-    "/home/NAME/Folder"
+    "$RELATIVE_BACKUP_PATH"
+    "NAME/Folder"
 )

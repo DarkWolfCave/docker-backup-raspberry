@@ -32,6 +32,40 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../config/config"
 
+# Prüfe ob Docker installiert ist und installiere es bei Bedarf
+if ! command -v docker &> /dev/null; then
+    log "Docker ist nicht installiert. Starte Installation..."
+    # Update Package List
+    if apt-get update && \
+       # Install required packages
+       apt-get install -y ca-certificates curl gnupg lsb-release && \
+       # Add Docker's official GPG key
+       mkdir -p /etc/apt/keyrings && \
+       curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
+       # Set up the repository
+       echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+       # Update apt package index
+       apt-get update && \
+       # Install Docker Engine
+       apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin; then
+        log "Docker wurde erfolgreich installiert"
+    else
+        log_error "Fehler bei der Docker-Installation"
+        exit 1
+    fi
+fi
+
+# Prüfe ob Docker läuft
+if ! systemctl is-active --quiet docker; then
+    log "Docker ist nicht aktiv. Starte Docker..."
+    if systemctl start docker; then
+        log "Docker wurde erfolgreich gestartet"
+    else
+        log_error "Fehler beim Starten von Docker"
+        exit 1
+    fi
+fi
+
 mkdir -p "$BACKUP_BASE_DIR"
 
 # Prüfe ob Backup-Verzeichnis als Parameter übergeben wurde
@@ -61,8 +95,6 @@ if [ "$EUID" -ne 0 ]; then
     log_error "Bitte als Root ausführen"
     exit 1
 fi
-
-HOME_DIR="/home"
 
 # Prüfe ob Backup-Verzeichnis existiert
 if [ ! -d "$BACKUP_DIR" ]; then
@@ -133,7 +165,7 @@ if [ -d "$BACKUP_DIR/docker_configs" ]; then
     if cp -r $BACKUP_DIR/docker_configs/* /etc/docker/ 2>> "$RESTORE_LOG_FILE"; then
         log "Docker Konfigurationen erfolgreich wiederhergestellt"
     else
-        log_error "Fehler beim Wiederherstellen der Docker Konfigurationen"
+        log_error "Fehler beim Wiederherstellen der Docker Konfigurationen (kann meistens ignoriert werden)"
     fi
 fi
 
