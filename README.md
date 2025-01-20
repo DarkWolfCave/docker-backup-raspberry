@@ -26,3 +26,89 @@ cd docker-backup-raspberry
 cp config/config.example.sh config/config.sh
 # Konfiguration in config.sh anpassen
 chmod +x scripts/*.sh
+```
+
+## Was wird gesichert?
+
+- Docker Container (laufend und gestoppt)
+- Docker Images
+- Docker Volumes
+- Docker Konfigurationen
+- HOME Verzeichnis (optional)
+- Crontabs aller Benutzer
+- docker-compose Dateien
+
+## Verwendung
+
+### Backup erstellen:
+```bash
+sudo ./scripts/docker_backup.sh
+```
+
+### Backup wiederherstellen:
+```bash
+sudo ./scripts/docker_restore.sh /path/to/backup/YYYY-MM-DD_HH-MM-SS
+```
+
+### Beispiel für einen Cron-Job:
+```bash
+# Tägliches Backup um 3 Uhr morgens
+0 3 * * * /pfad/zu/scripts/docker_backup.sh
+```
+
+## Konfiguration
+
+Kopieren Sie `config.example.sh` nach `config.sh` und passen Sie die Werte an:
+- BACKUP_DIR: Verzeichnis für die Backups
+- LOG_FILE: Pfad zur Log-Datei
+
+## Logging
+
+Die Skripte erstellen detaillierte Logs:
+- Backup-Log: `backup.log` im Backup-Verzeichnis
+- Restore-Log: `restore_DATUM.log` im Backup-Verzeichnis
+
+## Fehlerbehandlung
+
+Die Skripte prüfen:
+- Root-Rechte
+- Existenz der Backup-Verzeichnisse
+- Erfolg jeder Operation
+- Fehlermeldungen werden im Log festgehalten
+- Zusammenfassung am Ende des Restore-Vorgangs
+
+## Lizenz
+
+Copyright (c) 2024 DarkWolfCave.de
+
+Dieses Projekt steht unter einer benutzerdefinierten Lizenz mit folgenden Bedingungen:
+
+1. **Urheberrechtshinweis:** Der ursprüngliche Urheberrechtshinweis und dieser Lizenztext müssen in allen Kopien oder wesentlichen Teilen des Skripts enthalten bleiben.
+
+2. **Verbot des Weiterverkaufs:** Der Verkauf dieses Skripts, ob in seiner ursprünglichen oder modifizierten Form, ist untersagt. Eine kommerzielle Nutzung ist nur nach ausdrücklicher schriftlicher Genehmigung des Autors gestattet.
+
+3. **Integration in andere Projekte:** Die Integration dieses Skripts in andere Projekte ist nur erlaubt, wenn das Skript als eigenständige Komponente erkennbar bleibt und die oben genannten Bedingungen eingehalten werden.
+
+4. **Haftungsausschluss:** DIESES SKRIPT WIRD OHNE JEGLICHE GEWÄHRLEISTUNG, AUSDRÜCKLICH ODER IMPLIZIT, BEREITGESTELLT. DER AUTOR HAFTET NICHT FÜR IRGENDWELCHE SCHÄDEN ODER FOLGESCHÄDEN, DIE DURCH DIE NUTZUNG DES SKRIPTS ENTSTEHEN.
+
+Vollständige Lizenzbedingungen siehe [LICENSE](LICENSE)
+
+## Autor
+
+DarkWolfCave
+- Website: https://darkwolfcave.de
+- GitHub: https://github.com/DarkWolfCave
+
+## Support
+
+Bei Fragen oder Problemen können Sie:
+- Ein Issue auf GitHub erstellen
+- Die Dokumentation auf der Website konsultieren
+
+## Changelog
+
+### Version 1.0 (Januar 2025)
+- Initiale Version
+- Vollständiges Backup- und Restore-System
+- Logging-System implementiert
+- Fehlerbehandlung implementiert
