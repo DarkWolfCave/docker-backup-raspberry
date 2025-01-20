@@ -119,13 +119,14 @@ log "Container-Status gespeichert"
 # Docker Images sichern
 log "Starte Sicherung der Docker Images..."
 for container in $(docker ps -aq); do
-    name=$(docker inspect --format='{{.Name}}' $container | sed 's/\///')
-    log "Sichere Container: $name"
+    name=$(docker inspect --format='{{.Name}}' $container | sed 's/\///' | tr '[:upper:]' '[:lower:]')
+    original_name=$(docker inspect --format='{{.Name}}' $container | sed 's/\///')
+    log "Sichere Container: $original_name"
     if docker commit $container ${name}_backup 2>> "$LOG_FILE" && \
-       docker save ${name}_backup > $BACKUP_DIR/${name}_backup.tar 2>> "$LOG_FILE"; then
-        log "Container $name erfolgreich gesichert"
+       docker save ${name}_backup > $BACKUP_DIR/${original_name}_backup.tar 2>> "$LOG_FILE"; then
+        log "Container $original_name erfolgreich gesichert"
     else
-        log_error "Sicherung des Containers $name fehlgeschlagen"
+        log_error "Sicherung des Containers $original_name fehlgeschlagen"
     fi
 done
 log "Docker Image Sicherung abgeschlossen"
