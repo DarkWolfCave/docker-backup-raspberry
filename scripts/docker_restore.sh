@@ -32,6 +32,18 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../config/config"
 
+# Funktion für Logging
+log() {
+    local message="[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+    echo "$message" | tee -a "$RESTORE_LOG_FILE"
+}
+
+# Funktion für Fehler-Logging
+log_error() {
+    local message="[$(date '+%Y-%m-%d %H:%M:%S')] FEHLER: $1"
+    echo "$message" | tee -a "$RESTORE_LOG_FILE" >&2
+}
+
 # Prüfe ob Docker installiert ist und installiere es bei Bedarf
 if ! command -v docker &> /dev/null; then
     log "Docker ist nicht installiert. Starte Installation..."
@@ -78,18 +90,6 @@ fi
 RESTORE_DATE=$(date +%Y-%m-%d_%H-%M-%S)
 BACKUP_DIR="$1"
 
-# Funktion für Logging
-log() {
-    local message="[$(date '+%Y-%m-%d %H:%M:%S')] $1"
-    echo "$message" | tee -a "$RESTORE_LOG_FILE"
-}
-
-# Funktion für Fehler-Logging
-log_error() {
-    local message="[$(date '+%Y-%m-%d %H:%M:%S')] FEHLER: $1"
-    echo "$message" | tee -a "$RESTORE_LOG_FILE" >&2
-}
-
 # Prüfe Root-Rechte
 if [ "$EUID" -ne 0 ]; then
     log_error "Bitte als Root ausführen"
@@ -134,7 +134,11 @@ fi
 # HOME-Verzeichnis wiederherstellen
 log "Stelle HOME-Verzeichnis wieder her..."
 if [ -f "$BACKUP_DIR/home.tar.gz" ]; then
-    if tar -xzf "$BACKUP_DIR/home.tar.gz" -C $HOME_DIR 2>> "$RESTORE_LOG_FILE"; then
+    # Finde den relativen Pfad ab docker-backup-raspberry
+    EXCLUDE_DIR="*/docker-backup-raspberry/*"
+    log "Exclude Backup-Tool-Verzeichnis: $EXCLUDE_DIR"
+
+    if tar --warning=no-file-ignored --exclude="$EXCLUDE_DIR" -xzf "$BACKUP_DIR/home.tar.gz" -C "$HOME_DIR" 2>> "$RESTORE_LOG_FILE"; then
         log "HOME-Verzeichnis erfolgreich wiederhergestellt"
     else
         log_error "Fehler beim Wiederherstellen des HOME-Verzeichnisses"
