@@ -1,7 +1,7 @@
 #!/bin/bash
 # config/config.sh
 # Hauptverzeichnis für alle Backups
-BACKUP_BASE_DIR="/home/NAME/backup"
+BACKUP_BASE_DIR="/home/pi/backup"
 
 ###########NICHT ÄNDERN!######################
 RELATIVE_BACKUP_PATH=${BACKUP_BASE_DIR#/home/}
@@ -17,19 +17,19 @@ DOCKER_VOLUMES_DIR="/var/lib/docker/volumes"
 HOME_DIR="/home"
 
 # Optional: HOME-Verzeichnis Backup aktivieren/deaktivieren
-BACKUP_HOME=false
+BACKUP_HOME=true
 
 # Optional: Ausschlüsse vom Backup
 # "$RELATIVE_BACKUP_PATH" NICHT ändern!
 EXCLUDE_DIRS=(
     "$RELATIVE_BACKUP_PATH"
-    "NAME/Folder"
+    "pi/michnicht"
 )
 
-# Backup-Retention-Einstellungen
-RETENTION_DAILY=7
-RETENTION_WEEKLY=4
-RETENTION_MONTHLY=3
+# Konfiguration für Aufbewahrung
+DAILY_BACKUPS=7    # Letzte 7 tägliche Backups behalten
+WEEKLY_BACKUPS=4   # Letzte 4 wöchentliche Backups behalten
+MONTHLY_BACKUPS=3  # Letzte 3 monatliche Backups behalten
 
 # Verschlüsselungs-Einstellungen
 ENABLE_ENCRYPTION=false
