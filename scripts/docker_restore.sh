@@ -2,9 +2,9 @@
 # scripts/docker_restore.sh
 #
 # Erstellt von: DarkWolfCave
-# Version: 1.0
+# Version: 1.1.0
 # Erstellt am: Januar 2025
-# Letzte Änderung: 20.01.2025
+# Letzte Änderung: 21.01.2025
 #
 # Beschreibung:
 # Diese Skripte erstellen ein vollständiges Backup/Restore der Docker-Umgebung
