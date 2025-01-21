@@ -114,6 +114,46 @@ Bei Fragen oder Problemen kannst du:
 - Mich über [Discord](https://discord.gg/neyGWMUdjQ) erreichen 
 
 ## Changelog
+### Version 1.1.0 (Januar 2025)
+## Neue Funktionen
+- Implementierung eines robusten Backup-Rotationssystems
+- Einführung eines Backup-Status-Checks
+- Optionale Verschlüsselung von Backups
+- Möglichkeit zur selektiven Wiederherstellung von Containern und Volumes
+
+## Verbesserungen
+- Verwendung von Dateisystem-Zeitstempeln statt Verzeichnisnamen für genauere Altersbestimmung
+- Verbesserte Fehlerbehandlung und Logging in allen Skripten
+- Optimierte Speicherplatznutzung durch automatisches Löschen veralteter Backups
+
+## Änderungen im Detail
+
+### Backup-Rotation (cleanup_old_backups.sh)
+- Automatische Bereinigung alter Backups basierend auf konfigurierbaren Aufbewahrungsregeln
+- Beibehaltung täglicher, wöchentlicher und monatlicher Backups für definierten Zeitraum
+- Verwendung von `stat` für präzise Altersbestimmung der Backup-Verzeichnisse
+
+### Backup-Status-Check (check_backup_status.sh)
+- Überprüfung des Alters des letzten Backups
+- Analyse der Backup-Größe und des verfügbaren Speicherplatzes
+- Integritätsprüfung der Backup-Dateien (Docker Images und Volumes)
+
+### Optionale Verschlüsselung (encrypt_backup.sh)
+- AES-256 Verschlüsselung für sensible Backup-Daten
+- Sichere Passwortgenerierung und -speicherung
+- Kompatibilität mit dem Wiederherstellungsprozess
+
+### Selektive Wiederherstellung
+- Möglichkeit, einzelne Container oder Volumes wiederherzustellen
+- Verbesserte Flexibilität bei der Datenwiederherstellung
+
+### Allgemeine Verbesserungen
+- Umfangreichere Logging-Funktionen für bessere Nachvollziehbarkeit
+- Optimierte Fehlerbehandlung in allen Skripten
+- Verbesserte Kompatibilität mit verschiedenen Backup-Namenskonventionen
+
+## Behobene Fehler
+- Korrektur der Datumsberechnung in allen Skripten
 
 ### Version 1.0.1 (Januar 2025)
 - Fehler in der config korrigiert
