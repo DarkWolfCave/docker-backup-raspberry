@@ -140,6 +140,18 @@ else
     log_error "Sicherung der docker-compose Dateien fehlgeschlagen"
 fi
 
+# optional verschlüsseln
+if [ "$ENABLE_ENCRYPTION" = true ]; then
+    log "Starte Backup-Verschlüsselung..."
+    ./encrypt_backup.sh encrypt "$BACKUP_DIR"
+fi
+
+# Backup-Rotation durchführen
+./cleanup_old_backups.sh
+
+# Status-Check durchführen
+./check_backup_status.sh
+
 # Backup-Größe berechnen und protokollieren
 BACKUP_SIZE=$(du -sh "$BACKUP_DIR" | cut -f1)
 log "Backup erfolgreich abgeschlossen. Gesamtgröße des Backups: $BACKUP_SIZE"
