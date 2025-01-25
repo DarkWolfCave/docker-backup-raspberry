@@ -3,6 +3,10 @@
 # Hauptverzeichnis für alle Backups
 BACKUP_BASE_DIR="/home/pi/backup"
 
+# Nur beim Restore wichtig falls sich der User ändert:
+# Standard-Benutzername für die Wiederherstellung
+RESTORE_USER="pi"
+
 ###########NICHT ÄNDERN!######################
 RELATIVE_BACKUP_PATH=${BACKUP_BASE_DIR#/home/}
 ##############################################
@@ -21,6 +25,7 @@ BACKUP_HOME=true
 
 # Optional: Ausschlüsse vom Backup
 # "$RELATIVE_BACKUP_PATH" NICHT ändern!
+# Beispiel für weitere: "pi/michnicht"
 EXCLUDE_DIRS=(
     "$RELATIVE_BACKUP_PATH"
     "pi/michnicht"
