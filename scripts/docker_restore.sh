@@ -2,9 +2,9 @@
 # scripts/docker_restore.sh
 #
 # Erstellt von: DarkWolfCave
-# Version: 1.1.0
+# Version: 1.1.1
 # Erstellt am: Januar 2025
-# Letzte Änderung: 21.01.2025
+# Letzte Änderung: 25.01.2025
 #
 # Beschreibung:
 # Diese Skripte erstellen ein vollständiges Backup/Restore der Docker-Umgebung
@@ -97,6 +97,7 @@ restore_single_volume() {
         return 1
     fi
 }
+
 # Parameter verarbeiten
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -130,25 +131,9 @@ fi
 
 # Prüfe ob Docker installiert ist und installiere es bei Bedarf
 if ! command -v docker &> /dev/null; then
-    log "Docker ist nicht installiert. Starte Installation..."
-    # Update Package List
-    if apt-get update && \
-       # Install required packages
-       apt-get install -y ca-certificates curl gnupg lsb-release && \
-       # Add Docker's official GPG key
-       mkdir -p /etc/apt/keyrings && \
-       curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
-       # Set up the repository
-       echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-       # Update apt package index
-       apt-get update && \
-       # Install Docker Engine
-       apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin; then
-        log "Docker wurde erfolgreich installiert"
-    else
-        log_error "Fehler bei der Docker-Installation"
-        exit 1
-    fi
+    log "Docker ist nicht installiert. Bitte installiere dies zuerst und richte es entsprechend für den Start ein"
+    log "Anleitung findest du unter anderem hier: https://darkwolfcave.de/raspberry-pi-docker-ohne-probleme-installieren/"
+    exit 1
 fi
 
 # Prüfe ob Docker läuft
@@ -213,6 +198,69 @@ else
     BACKUP_DIR="$INPUT_PATH"
 fi
 
+# Entdecke alle Benutzerverzeichnisse im Backup
+declare -a users
+
+echo "Ermittle Benutzernamen aus dem Backup..."
+
+# Extrahiere Benutzernamen
+while IFS= read -r line; do
+  user=$(echo "$line" | cut -d'/' -f2)
+  # Überprüfe, ob der Benutzername in der Liste vorhanden ist und füge ihn hinzu, falls nötig
+  if [[ ! " ${users[@]} " =~ " ${user} " ]]; then
+      users+=("$user")
+  fi
+done < <(tar -tzf "$BACKUP_DIR/home.tar.gz" | grep '^./[^/]\+/')
+
+# Zeige gefundene Benutzernamen
+echo "Gefundene Benutzerverzeichnisse:"
+for i in "${!users[@]}"; do
+    echo "$(($i + 1)): ${users[$i]}"
+done
+
+# Erlaube dem Benutzer, einen Namen auszuwählen
+read -p "Bitte wählen Sie den ursprünglichen Benutzer, um ihn zu ändern (1-${#users[@]}): " choice
+
+# Überprüfe die Benutzerauswahl
+if [[ "$choice" =~ ^[0-9]+$ && "$choice" -ge 1 && "$choice" -le "${#users[@]}" ]]; then
+    original_user="${users[$((choice - 1))]}"
+    log "Ausgewählter Benutzer: $original_user"
+else
+    log_error "Ungültige Auswahl. Abbruch."
+    exit 1
+fi
+
+# Bestätigen oder ändern des Benutzernamens
+echo "Aktueller Benutzername für die Wiederherstellung ist: $RESTORE_USER"
+read -p "Möchtest du diesen Benutzernamen ändern? (ja/Nein): " confirm
+# Standard auf "Nein" setzen, falls keine Eingabe
+confirm=${confirm:-nein}
+if [[ "$confirm" =~ ^[Jj]([Aa])?$ ]]; then
+    read -p "Gib den neuen Benutzernamen ein: " input_username
+    if [ -n "$input_username" ]; then
+        RESTORE_USER="$input_username"
+        log "Der Benutzername wurde geändert. Neuer Benutzername: $RESTORE_USER"
+    else
+        log "Keine Eingabe. Der Benutzername bleibt: $RESTORE_USER"
+    fi
+else
+    log "Der Benutzername wurde nicht geändert. Aktueller Benutzername: $RESTORE_USER"
+fi
+
+# Aufruf des Update-Skripts mit den Benutzernamen zur Aktualisierung der Docker-Konfigurationen
+UPDATE_SCRIPT="$SCRIPT_DIR/update_user_in_docker_config.sh"
+if [ -x "$UPDATE_SCRIPT" ]; then
+    echo "Rufe Update-Skript auf, um Benutzernamen in container_configs.json zu ändern..."
+    "$UPDATE_SCRIPT" "$BACKUP_DIR" "$original_user" "$RESTORE_USER"
+    if [ $? -eq 0 ]; then
+        log "Benutzernamen in container_configs.json von $original_user zu $RESTORE_USER erfolgreich ersetzt"
+    else
+        log_error "Fehler beim Ausführen des Update-Skripts"
+    fi
+else
+    log_error "Update-Skript nicht gefunden oder nicht ausführbar: $UPDATE_SCRIPT"
+fi
+
 # Prüfe ob Backup-Verzeichnis existiert
 if [ ! -d "$BACKUP_DIR" ]; then
     log_error "Backup-Verzeichnis existiert nicht: $BACKUP_DIR"
@@ -267,12 +315,17 @@ if ! $SKIP_GENERAL_RESTORE; then
         EXCLUDE_DIR="*/docker-backup-raspberry/*"
         log "Exclude Backup-Tool-Verzeichnis: $EXCLUDE_DIR"
 
-        if tar --warning=no-file-ignored --exclude="$EXCLUDE_DIR" -xzf "$BACKUP_DIR/home.tar.gz" -C "$HOME_DIR" 2>> "$RESTORE_LOG_FILE"; then
-            log "HOME-Verzeichnis erfolgreich wiederhergestellt"
+        # Extrahiere mit Pfadumleitung
+        if tar --warning=no-file-ignored --exclude="$EXCLUDE_DIR" -xvzf "$BACKUP_DIR/home.tar.gz" \
+           --transform "s|^./${original_user}|./$RESTORE_USER|" -C "$HOME_DIR" | while read -r file; do
+            # Logge jeden Pfad, der aus dem Archiv extrahiert wird
+            log "Wiederhergestellt mit neuem Pfad: ${file/$original_user/$RESTORE_USER}"
+        done 2>> "$RESTORE_LOG_FILE"; then
+            log "HOME-Verzeichnis erfolgreich wiederhergestellt mit Benutzeranpassung"
         else
             log_error "Fehler beim Wiederherstellen des HOME-Verzeichnisses"
         fi
-    else
+   else
         log_error "Keine HOME-Verzeichnis-Sicherung gefunden"
     fi
 
@@ -346,19 +399,13 @@ if ! $SKIP_GENERAL_RESTORE; then
     fi
 
     # Berechtigungen für HOME-Verzeichnis korrigieren
-    log "Korrigiere Berechtigungen für HOME-Verzeichnis..."
-    for user_dir in $HOME_DIR/*; do
-        if [ -d "$user_dir" ]; then
-            username=$(basename "$user_dir")
-            if chown -R $username:$username "$user_dir" 2>> "$RESTORE_LOG_FILE"; then
-                log "Berechtigungen für Benutzer $username korrigiert"
-            else
-                log_error "Fehler beim Korrigieren der Berechtigungen für Benutzer $username"
-            fi
+        log "Korrigiere Berechtigungen für HOME-Verzeichnis..."
+        if chown -R $RESTORE_USER:$RESTORE_USER "$HOME_DIR/$RESTORE_USER" 2>> "$RESTORE_LOG_FILE"; then
+            log "Berechtigungen für Benutzer $RESTORE_USER korrigiert"
+        else
+            log_error "Fehler beim Korrigieren der Berechtigungen für Benutzer $RESTORE_USER"
         fi
-    done
 fi
-
 # Zusammenfassung erstellen
 log "=== Wiederherstellungs-Zusammenfassung ==="
 RESTORE_END_TIME=$(date +%Y-%m-%d_%H-%M-%S)
