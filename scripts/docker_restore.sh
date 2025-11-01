@@ -212,6 +212,13 @@ while IFS= read -r line; do
   fi
 done < <(tar -tzf "$BACKUP_DIR/home.tar.gz" | grep '^./[^/]\+/')
 
+# Füge auch den Hauptbenutzer hinzu, falls er nicht in der Liste steht
+# Der Hauptbenutzer ist derjenige, dessen Verzeichnis direkt unter /home liegt
+main_user=$(tar -tzf "$BACKUP_DIR/home.tar.gz" | grep '^./[^/]\+/$' | head -1 | cut -d'/' -f2)
+if [[ -n "$main_user" && ! " ${users[@]} " =~ " ${main_user} " ]]; then
+    users+=("$main_user")
+fi
+
 # Zeige gefundene Benutzernamen
 echo "Gefundene Benutzerverzeichnisse:"
 for i in "${!users[@]}"; do
@@ -378,21 +385,52 @@ if ! $SKIP_GENERAL_RESTORE; then
         fi
     else
         log "Stelle einzelne Container wieder her..."
+
+        # Prüfe ob jq installiert ist (wird für Config-Parser benötigt)
+        if ! command -v jq &> /dev/null; then
+            log "WARNUNG: jq nicht installiert - Container werden ohne Ports/Volumes erstellt"
+            log "Installiere jq mit: apt-get install jq"
+            USE_CONFIG_PARSER=false
+        else
+            USE_CONFIG_PARSER=true
+        fi
+
         if [ -f "$BACKUP_DIR/container_states.txt" ]; then
             while IFS=, read -r container_name container_state; do
                 log "Stelle Container wieder her: $container_name"
-                if docker create --name "$container_name" "${container_name}_backup" 2>> "$RESTORE_LOG_FILE"; then
-                    if [[ $container_state == *"running"* ]]; then
-                        if docker start "$container_name" 2>> "$RESTORE_LOG_FILE"; then
-                            log "Container $container_name erfolgreich gestartet"
+
+                # Verwende Config-Parser wenn verfügbar
+                if [ "$USE_CONFIG_PARSER" = true ] && [ -f "$SCRIPT_DIR/restore_container_from_config.sh" ]; then
+                    if bash "$SCRIPT_DIR/restore_container_from_config.sh" "$BACKUP_DIR" "$container_name" "$RESTORE_LOG_FILE"; then
+                        # Container wurde erstellt, prüfe ob er gestartet werden soll
+                        if [[ $container_state == *"running"* ]]; then
+                            if docker start "$container_name" 2>> "$RESTORE_LOG_FILE"; then
+                                log "Container $container_name erfolgreich gestartet"
+                            else
+                                log_error "Fehler beim Starten des Containers $container_name"
+                            fi
                         else
-                            log_error "Fehler beim Starten des Containers $container_name"
+                            log "Container $container_name wurde gestoppt wiederhergestellt"
                         fi
                     else
-                        log "Container $container_name wurde gestoppt wiederhergestellt"
+                        log_error "Fehler beim Erstellen des Containers $container_name"
                     fi
                 else
-                    log_error "Fehler beim Erstellen des Containers $container_name"
+                    # Fallback: Alte Methode (ohne Ports/Volumes)
+                    log "WARNUNG: Erstelle Container ohne Config-Parser (Ports/Volumes fehlen!)"
+                    if docker create --name "$container_name" "${container_name}_backup" 2>> "$RESTORE_LOG_FILE"; then
+                        if [[ $container_state == *"running"* ]]; then
+                            if docker start "$container_name" 2>> "$RESTORE_LOG_FILE"; then
+                                log "Container $container_name erfolgreich gestartet"
+                            else
+                                log_error "Fehler beim Starten des Containers $container_name"
+                            fi
+                        else
+                            log "Container $container_name wurde gestoppt wiederhergestellt"
+                        fi
+                    else
+                        log_error "Fehler beim Erstellen des Containers $container_name"
+                    fi
                 fi
             done < "$BACKUP_DIR/container_states.txt"
         fi

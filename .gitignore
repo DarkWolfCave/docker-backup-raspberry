@@ -1,3 +1,58 @@
+# Konfigurationsdateien mit sensiblen Daten
+config/config
 config/config.sh
+*.backup_password
+*.key
+*.pem
+.env
+.env.*
+
+# Log-Dateien
 *.log
+restore.log
+backup.log
+
+# Backup-Verzeichnisse und Daten
 backup/
+backups/
+test_backup/
+restore/
+
+# Kundendaten - NICHT ins Git!
+kunden/
+
+# GPG Keys und verschlüsselte Dateien (privat)
+*.gpg.private
+*.asc
+private_keys/
+
+# Temporäre Dateien
+temp/
+tmp/
+*.tmp
+*.temp
+*~
+.~*
+
+# IDE und Editor Dateien
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+~/.cursor/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# Projekt-spezifische Temp-Verzeichnisse
+~/
