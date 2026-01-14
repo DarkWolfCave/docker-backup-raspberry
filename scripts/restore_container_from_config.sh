@@ -2,7 +2,7 @@
 # scripts/restore_container_from_config.sh
 #
 # Erstellt von: DarkWolfCave
-# Version: 1.0.0
+# Version: 1.2.1
 # Erstellt am: 2025-11-01
 #
 # Beschreibung:
@@ -15,6 +15,9 @@
 BACKUP_DIR="$1"
 CONTAINER_NAME="$2"
 LOG_FILE="${3:-/dev/null}"
+
+# WICHTIG: Image-Namen sind lowercase (docker_backup.sh verwendet tr '[:upper:]' '[:lower:]')
+CONTAINER_NAME_LOWER=$(echo "$CONTAINER_NAME" | tr '[:upper:]' '[:lower:]')
 
 # Prüfe ob jq installiert ist
 if ! command -v jq &> /dev/null; then
@@ -35,8 +38,8 @@ CONTAINER_JSON=$(cat "$CONFIG_FILE" | jq -s ".[].[] | select(.Name == \"/$CONTAI
 
 if [ -z "$CONTAINER_JSON" ]; then
     echo "WARNUNG: Keine Config für Container $CONTAINER_NAME gefunden, verwende Fallback" | tee -a "$LOG_FILE"
-    # Fallback: Erstelle Container nur mit Image
-    docker create --name "$CONTAINER_NAME" "${CONTAINER_NAME}_backup" 2>> "$LOG_FILE"
+    # Fallback: Erstelle Container nur mit Image (lowercase wegen docker_backup.sh)
+    docker create --name "$CONTAINER_NAME" "${CONTAINER_NAME_LOWER}_backup" 2>> "$LOG_FILE"
     exit $?
 fi
 
@@ -76,8 +79,8 @@ if [ -n "$USER" ]; then
     DOCKER_CMD="$DOCKER_CMD -u $USER"
 fi
 
-# Image - verwende das Backup-Image
-DOCKER_CMD="$DOCKER_CMD ${CONTAINER_NAME}_backup:latest"
+# Image - verwende das Backup-Image (lowercase wegen docker_backup.sh)
+DOCKER_CMD="$DOCKER_CMD ${CONTAINER_NAME_LOWER}_backup:latest"
 
 # Logge den Befehl
 echo "Erstelle Container mit: $DOCKER_CMD" >> "$LOG_FILE"

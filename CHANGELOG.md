@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.2.1] - 14.01.2026
+
+### Fixed
+- **KRITISCH - docker_restore.sh & restore_container_from_config.sh**: Case-Sensitivity Bug behoben!
+  - `docker_backup.sh` speichert Images mit lowercase Namen (`portainer_backup`)
+  - `docker_restore.sh` versuchte aber mit Original-Case zu laden (`Portainer_backup`)
+  - Container konnten deshalb nicht gestartet werden: "Image not found"
+  - **Das war der Hauptgrund warum Restores bei vielen Usern fehlschlugen!**
+
+- **check_backup_status.sh**: Hardcoded Jahr "2025" im grep-Pattern entfernt.
+  - Backups wurden ab 2026 nicht mehr in der Liste angezeigt.
+  - Pattern ist jetzt jahresunabhängig: `[0-9]{4}-[0-9]{2}-[0-9]{2}`
+
+### Updated
+- Alle betroffenen Skripte auf Version 1.2.1 aktualisiert.
+
+---
+
 ## [1.2.0] - 14.01.2026
 
 ### Fixed

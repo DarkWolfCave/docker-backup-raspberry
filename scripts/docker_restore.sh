@@ -2,7 +2,7 @@
 # scripts/docker_restore.sh
 #
 # Erstellt von: DarkWolfCave
-# Version: 1.2.0
+# Version: 1.2.1
 # Erstellt am: Januar 2025
 # Letzte Änderung: 14.01.2026
 #
@@ -71,7 +71,9 @@ restore_single_container() {
         else
             # Fallback: Alte Methode ohne Ports/Volumes
             log "WARNUNG: jq nicht installiert oder Config-Parser nicht gefunden - Container wird ohne Ports/Volumes erstellt!"
-            if docker create --name "$container_name" "${container_name}_backup" 2>> "$RESTORE_LOG_FILE"; then
+            # WICHTIG: Image-Name ist lowercase (docker_backup.sh verwendet tr '[:upper:]' '[:lower:]')
+            local container_name_lower=$(echo "$container_name" | tr '[:upper:]' '[:lower:]')
+            if docker create --name "$container_name" "${container_name_lower}_backup" 2>> "$RESTORE_LOG_FILE"; then
                 log "Container $container_name erstellt (ohne Config)"
                 # Prüfe ob Container vorher lief
                 if grep -q "$container_name,running" "$backup_dir/container_states.txt"; then
@@ -430,7 +432,9 @@ if ! $SKIP_GENERAL_RESTORE; then
                 else
                     # Fallback: Alte Methode (ohne Ports/Volumes)
                     log "WARNUNG: Erstelle Container ohne Config-Parser (Ports/Volumes fehlen!)"
-                    if docker create --name "$container_name" "${container_name}_backup" 2>> "$RESTORE_LOG_FILE"; then
+                    # WICHTIG: Image-Name ist lowercase (docker_backup.sh verwendet tr '[:upper:]' '[:lower:]')
+                    local container_name_lower=$(echo "$container_name" | tr '[:upper:]' '[:lower:]')
+                    if docker create --name "$container_name" "${container_name_lower}_backup" 2>> "$RESTORE_LOG_FILE"; then
                         if [[ $container_state == *"running"* ]]; then
                             if docker start "$container_name" 2>> "$RESTORE_LOG_FILE"; then
                                 log "Container $container_name erfolgreich gestartet"

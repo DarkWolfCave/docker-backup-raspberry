@@ -11,7 +11,7 @@ log() {
 # Liste alle Backups auf
 list_backups() {
     log "Gefundene Backups:"
-    ls -rtla "$BACKUP_BASE_DIR" | grep -E '2025-[0-9]{2}-[0-9]{2}' | while read -r line; do
+    ls -rtla "$BACKUP_BASE_DIR" | grep -E '[0-9]{4}-[0-9]{2}-[0-9]{2}' | while read -r line; do
         log "$line"
     done
 }
