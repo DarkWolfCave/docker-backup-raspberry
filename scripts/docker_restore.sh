@@ -2,7 +2,7 @@
 # scripts/docker_restore.sh
 #
 # Erstellt von: DarkWolfCave
-# Version: 1.2.1
+# Version: 1.2.2
 # Erstellt am: Januar 2025
 # Letzte Änderung: 14.01.2026
 #

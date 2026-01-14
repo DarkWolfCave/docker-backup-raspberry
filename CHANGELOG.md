@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.2] - 14.01.2026
+
+### Added
+- **restore_container_from_config.sh**: Bind-Mount Pfad-Prüfung vor Container-Start
+  - Prüft ob alle Host-Pfade der Volume-Binds existieren
+  - Pfade unter `/home/` werden automatisch erstellt mit korrekten Berechtigungen (RESTORE_USER)
+  - Pfade außerhalb `/home/` erzeugen eine Warnung im Log
+  - Verhindert Probleme durch fehlende Bind-Mount-Verzeichnisse
+
+### Updated
+- Betroffene Skripte auf Version 1.2.2 aktualisiert.
+
+---
+
 ## [1.2.1] - 14.01.2026
 
 ### Fixed

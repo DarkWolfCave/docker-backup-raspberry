@@ -2,8 +2,9 @@
 # scripts/restore_container_from_config.sh
 #
 # Erstellt von: DarkWolfCave
-# Version: 1.2.1
+# Version: 1.2.2
 # Erstellt am: 2025-11-01
+# Letzte Änderung: 14.01.2026
 #
 # Beschreibung:
 # Dieses Script erstellt Docker Container aus der container_configs.json
@@ -11,6 +12,12 @@
 #
 # Verwendung:
 # restore_container_from_config.sh <backup_dir> <container_name> <log_file>
+
+# Lade Konfiguration für RESTORE_USER
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/../config/config" ]; then
+    source "$SCRIPT_DIR/../config/config"
+fi
 
 BACKUP_DIR="$1"
 CONTAINER_NAME="$2"
@@ -61,9 +68,35 @@ if [ -n "$PORTS" ]; then
     DOCKER_CMD="$DOCKER_CMD $PORTS"
 fi
 
-# Volume Binds
+# Volume Binds - mit Prüfung ob Host-Pfade existieren
 BINDS=$(echo "$CONTAINER_JSON" | jq -r '.HostConfig.Binds[]? // empty | "-v " + .')
 if [ -n "$BINDS" ]; then
+    # Prüfe jeden Bind-Mount Host-Pfad
+    echo "$CONTAINER_JSON" | jq -r '.HostConfig.Binds[]? // empty' | while read -r bind; do
+        # Extrahiere Host-Pfad (vor dem ersten :)
+        host_path=$(echo "$bind" | cut -d':' -f1)
+
+        if [ -n "$host_path" ] && [ ! -e "$host_path" ]; then
+            # Pfad existiert nicht - prüfe ob wir ihn erstellen können
+            if [[ "$host_path" == /home/* ]]; then
+                # Pfad liegt unter /home - erstellen mit korrekten Rechten
+                echo "WARNUNG: Bind-Mount Pfad existiert nicht, erstelle: $host_path" | tee -a "$LOG_FILE"
+                mkdir -p "$host_path" 2>> "$LOG_FILE"
+
+                # Setze Berechtigungen wenn RESTORE_USER definiert ist
+                if [ -n "$RESTORE_USER" ]; then
+                    chown -R "$RESTORE_USER:$RESTORE_USER" "$host_path" 2>> "$LOG_FILE"
+                    echo "  → Berechtigungen für $RESTORE_USER gesetzt" >> "$LOG_FILE"
+                fi
+            else
+                # Pfad liegt außerhalb /home - nur warnen
+                echo "WARNUNG: Bind-Mount Pfad existiert nicht: $host_path" | tee -a "$LOG_FILE"
+                echo "  → Container $CONTAINER_NAME benötigt diesen Pfad!" | tee -a "$LOG_FILE"
+                echo "  → Bitte manuell erstellen oder Daten wiederherstellen." | tee -a "$LOG_FILE"
+            fi
+        fi
+    done
+
     DOCKER_CMD="$DOCKER_CMD $BINDS"
 fi
 
