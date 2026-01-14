@@ -2,9 +2,9 @@
 # scripts/docker_backup.sh
 #
 # Erstellt von: DarkWolfCave
-# Version: 1.1.1
+# Version: 1.2.0
 # Erstellt am: Januar 2025
-# Letzte Änderung: 25.01.2025
+# Letzte Änderung: 14.01.2026
 #
 # Beschreibung:
 # Diese Skripte erstellen ein vollständiges Backup/Restore der Docker-Umgebung
@@ -118,6 +118,12 @@ for container in $(docker ps -aq); do
     if docker commit $container ${name}_backup 2>> "$LOG_FILE" && \
        docker save ${name}_backup > $BACKUP_DIR/${original_name}_backup.tar 2>> "$LOG_FILE"; then
         log "Container $original_name erfolgreich gesichert"
+        # Temporäres Backup-Image entfernen um Speicherplatz zu sparen
+        if docker rmi ${name}_backup 2>> "$LOG_FILE"; then
+            log "Temporäres Image ${name}_backup entfernt"
+        else
+            log_error "Konnte temporäres Image ${name}_backup nicht entfernen"
+        fi
     else
         log_error "Sicherung des Containers $original_name fehlgeschlagen"
     fi

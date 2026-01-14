@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.2.0] - 14.01.2026
+
+### Fixed
+- **docker_backup.sh**: Temporäre Backup-Images (`${name}_backup`) werden jetzt nach dem Export automatisch gelöscht.
+  Dies verhindert, dass sich bei jedem Backup neue Images ansammeln und unnötig Speicherplatz verbrauchen.
+  (Danke an Community-Feedback!)
+
+- **docker_restore.sh**: Die Funktion `restore_single_container()` verwendet jetzt den Config-Parser
+  (`restore_container_from_config.sh`), um Container mit allen Einstellungen wiederherzustellen:
+  - Port-Bindings (`-p host:container`)
+  - Volume-Mounts (`-v`)
+  - Restart-Policies
+  - Environment-Variablen
+
+  Behebt GitHub Issue #2: "Restore von -p port:port als Commandline-Parameter von Einzelcontainern fehlt"
+
+### Updated
+- Beide Skripte auf Version 1.2.0 aktualisiert.
+
+---
+
 ## [1.1.1] - 25.01.2025
 
 ### Added

@@ -2,9 +2,9 @@
 # scripts/docker_restore.sh
 #
 # Erstellt von: DarkWolfCave
-# Version: 1.1.1
+# Version: 1.2.0
 # Erstellt am: Januar 2025
-# Letzte Änderung: 25.01.2025
+# Letzte Änderung: 14.01.2026
 #
 # Beschreibung:
 # Diese Skripte erstellen ein vollständiges Backup/Restore der Docker-Umgebung
@@ -58,18 +58,30 @@ restore_single_container() {
 
     # Lade Container-Image
     if docker load < "$backup_dir/${container_name}_backup.tar" 2>> "$RESTORE_LOG_FILE"; then
-        # Erstelle und starte Container
-        if docker create --name "$container_name" "${container_name}_backup" 2>> "$RESTORE_LOG_FILE"; then
-            log "Container $container_name erfolgreich wiederhergestellt"
-
-            # Prüfe ob Container vorher lief
-            if grep -q "$container_name,running" "$backup_dir/container_states.txt"; then
-                docker start "$container_name" 2>> "$RESTORE_LOG_FILE"
-                log "Container $container_name gestartet"
+        # Prüfe ob jq und Config-Parser verfügbar sind
+        if command -v jq &> /dev/null && [ -f "$SCRIPT_DIR/restore_container_from_config.sh" ]; then
+            # Verwende Config-Parser für vollständige Wiederherstellung (inkl. Ports, Volumes, etc.)
+            if bash "$SCRIPT_DIR/restore_container_from_config.sh" "$backup_dir" "$container_name" "$RESTORE_LOG_FILE"; then
+                log "Container $container_name mit Config erfolgreich erstellt"
+                # Container wird von restore_container_from_config.sh bereits gestartet (docker run -d)
+            else
+                log_error "Fehler beim Erstellen des Containers $container_name mit Config-Parser"
+                return 1
             fi
         else
-            log_error "Fehler beim Erstellen des Containers $container_name"
-            return 1
+            # Fallback: Alte Methode ohne Ports/Volumes
+            log "WARNUNG: jq nicht installiert oder Config-Parser nicht gefunden - Container wird ohne Ports/Volumes erstellt!"
+            if docker create --name "$container_name" "${container_name}_backup" 2>> "$RESTORE_LOG_FILE"; then
+                log "Container $container_name erstellt (ohne Config)"
+                # Prüfe ob Container vorher lief
+                if grep -q "$container_name,running" "$backup_dir/container_states.txt"; then
+                    docker start "$container_name" 2>> "$RESTORE_LOG_FILE"
+                    log "Container $container_name gestartet"
+                fi
+            else
+                log_error "Fehler beim Erstellen des Containers $container_name"
+                return 1
+            fi
         fi
     else
         log_error "Fehler beim Laden des Images für $container_name"
